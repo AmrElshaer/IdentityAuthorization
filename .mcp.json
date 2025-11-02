@@ -1,0 +1,68 @@
+{
+
+  "servers": {
+
+    "mcp-server-time": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "C:\\projects\\personal_projects\\TestMcp\\TestMcp\\TestMcp.csproj"
+      ],
+      "env": {}
+    },
+    "redis": {
+      "command": "npx",
+      "args": [ "-y", "@modelcontextprotocol/server-redis" ],
+      "env": {
+        "REDIS_URL": "redis://localhost:6379"
+      }
+
+    },
+    "rabbitmq": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-rabbitmq@latest",
+        "--rabbitmq-host",
+        "localhost",
+        "--port",
+        "5672",
+        "--username",
+        "guest",
+        "--password",
+        "guest",
+        "--api-port",
+        "15672"
+      ]
+    },
+    "sonarqube": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--network",
+        "host",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_URL",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_TOKEN": "squ_58e2d1f047860cecaffcaa95d128494f373f91a9",
+        "SONARQUBE_URL": "http://localhost:9000"
+      }
+    },
+    "ppt": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "office-powerpoint-mcp-server",
+        "ppt_mcp_server"
+      ],
+      "env": {}
+    }
+  }
+}
