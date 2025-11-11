@@ -17,7 +17,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders(); // Required for password reset tokens
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme=JwtBearerDefaults.AuthenticationScheme;
@@ -86,6 +87,7 @@ app.MapGet("/weatherforecast", () =>
     .WithOpenApi();
 RegisterUser.MapEndpoint(app);
 LoginUser.MapEndpoint(app);
+ResetPassword.MapEndpoint(app); // NEW: Password reset endpoints
 app.MapGet("me-role", (ClaimsPrincipal claimsPrincipal) =>
 {
     return Results.Ok(claimsPrincipal.Claims.GroupBy(c=>c.Type)

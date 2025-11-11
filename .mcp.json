@@ -1,4 +1,11 @@
 {
+  "inputs": [
+    {
+      "id": "ado_org",
+      "type": "promptString",
+      "description": "Azure DevOps organization name  (e.g. 'contoso')"
+    }
+  ],
 
   "servers": {
 
@@ -63,6 +70,11 @@
         "ppt_mcp_server"
       ],
       "env": {}
+    },
+    "ado": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [ "-y", "@azure-devops/mcp", "${input:ado_org}" ]
     }
   }
 }
