@@ -7,5 +7,5 @@ After suggesting or writing any code, always:
    - Security
    - Reliability
    - Maintainability
-
+3. Run SonarQube and check for bugs and vulnerabilities.
 Do not finalize or commit code until the Sonar analysis confirms it passes all checks.
