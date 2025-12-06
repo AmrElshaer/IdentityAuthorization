@@ -10,6 +10,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Contract> Contracts => Set<Contract>();
     public DbSet<Inventory> Inventories => Set<Inventory>();
+    public DbSet<Country> Countries => Set<Country>();
     
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -129,6 +130,59 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             // Index for audit queries
             entity.HasIndex(e => e.CreatedBy)
                 .HasDatabaseName("IX_Inventories_CreatedBy");
+        });
+        
+        // Configure Country entity
+        builder.Entity<Country>(entity =>
+        {
+            entity.ToTable("Countries", "Domain");
+            entity.HasKey(e => e.Id);
+            
+            entity.Property(e => e.Code)
+                .IsRequired()
+                .HasMaxLength(2)
+                .IsFixedLength();
+            
+            entity.Property(e => e.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+            
+            entity.Property(e => e.Iso3Code)
+                .IsRequired()
+                .HasMaxLength(3)
+                .IsFixedLength();
+            
+            entity.Property(e => e.PhoneCode)
+                .IsRequired()
+                .HasMaxLength(10);
+            
+            entity.Property(e => e.IsActive)
+                .IsRequired()
+                .HasDefaultValue(true);
+            
+            entity.Property(e => e.CreatedAt)
+                .IsRequired();
+            
+            entity.Property(e => e.UpdatedAt)
+                .IsRequired(false);
+            
+            // Index for country code (unique)
+            entity.HasIndex(e => e.Code)
+                .IsUnique()
+                .HasDatabaseName("IX_Countries_Code");
+            
+            // Index for ISO3 code (unique)
+            entity.HasIndex(e => e.Iso3Code)
+                .IsUnique()
+                .HasDatabaseName("IX_Countries_Iso3Code");
+            
+            // Index for country name
+            entity.HasIndex(e => e.Name)
+                .HasDatabaseName("IX_Countries_Name");
+            
+            // Index for active countries
+            entity.HasIndex(e => e.IsActive)
+                .HasDatabaseName("IX_Countries_IsActive");
         });
         
         builder.HasDefaultSchema("Identity");
