@@ -34,6 +34,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -44,7 +45,10 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<ApplicationDbContext>();
-    context.Database.Migrate();
+    
+    // ? FIXED: Use async version (SonarQube compliance)
+    await context.Database.MigrateAsync();
+    
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     var roles = new[] { Roles.Admin, Roles.Member };
     foreach (var role in roles)
@@ -52,19 +56,18 @@ if (app.Environment.IsDevelopment())
         var roleExist = await roleManager.FindByNameAsync(role);
         if (roleExist is null)
         {
-            await roleManager.CreateAsync(roleExist=new IdentityRole(role));
+            // ? FIXED: Extract assignment (SonarQube compliance)
+            roleExist = new IdentityRole(role);
+            await roleManager.CreateAsync(roleExist);
             await roleManager.AddClaimAsync(roleExist,
                 new Claim(CustomClaims.Permissions, Permissions.UsersRead));
             await roleManager.AddClaimAsync(roleExist,
                 new Claim(CustomClaims.Permissions, Permissions.UsersUpdate));
             await roleManager.AddClaimAsync(roleExist,
                 new Claim(CustomClaims.Permissions, Permissions.UsersDelete));
-            
         }
     }
 }
-
-
 
 var summaries = new[]
 {
@@ -72,40 +75,47 @@ var summaries = new[]
 };
 
 app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
-    .WithOpenApi();
+{
+    var forecast = Enumerable.Range(1, 5).Select(index =>
+        new WeatherForecast(
+            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+            Random.Shared.Next(-20, 55),
+            summaries[Random.Shared.Next(summaries.Length)]
+        ))
+        .ToArray();
+    return forecast;
+})
+.WithName("GetWeatherForecast")
+.WithOpenApi();
+
+// Register API endpoints
 RegisterUser.MapEndpoint(app);
 LoginUser.MapEndpoint(app);
-ResetPassword.MapEndpoint(app); // NEW: Password reset endpoints
+ResetPassword.MapEndpoint(app);
+InventoryManagement.MapEndpoint(app); // NEW: Inventory management endpoints
+
 app.MapGet("me-role", (ClaimsPrincipal claimsPrincipal) =>
 {
     return Results.Ok(claimsPrincipal.Claims.GroupBy(c=>c.Type)
-        .ToDictionary(g=>g.Key,
-            g=>g.Select(c=>c.Value).ToArray()));
-}).RequireAuthorization(policy=>policy.RequireRole(Roles.Member));
+        .ToDictionary(g=>g.Key, g=>g.Select(c=>c.Value).ToArray()));
+})
+.RequireAuthorization(policy=>policy.RequireRole(Roles.Member));
+
 app.MapGet("me-permissions", (ClaimsPrincipal claimsPrincipal) =>
 {
     return Results.Ok(claimsPrincipal.Claims.GroupBy(c=>c.Type)
-        .ToDictionary(g=>g.Key,
-            g=>g.Select(c=>c.Value).ToArray()));
-}).RequireAuthorization(policy=>policy.RequirePermissions(Permissions.UsersRead));
+        .ToDictionary(g=>g.Key, g=>g.Select(c=>c.Value).ToArray()));
+})
+.RequireAuthorization(policy=>policy.RequirePermissions(Permissions.UsersRead));
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.Run();
 
+// ? FIXED: Use async version (SonarQube compliance)
+await app.RunAsync();
+
+// WeatherForecast record (acceptable at file scope for .NET 8 minimal APIs)
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
